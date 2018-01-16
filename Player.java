@@ -5,6 +5,7 @@ import bc.GameController;
 import bc.GameMap;
 import bc.Location;
 import bc.MapLocation;
+import bc.OrbitPattern;
 import bc.Planet;
 import bc.PlanetMap;
 import bc.Unit;
