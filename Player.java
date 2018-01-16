@@ -33,6 +33,26 @@ public class Player {
 	        // These will help keep track of robots and the such
 	        ArrayList<Unit> units = new ArrayList<Unit>();
 
+	        gc.queueResearch(UnitType.Worker);
+	    	  
+
+	  		for (int y=0;y<3;y++)
+	  		{
+	  		gc.queueResearch(UnitType.Rocket);
+	  	
+	  	}
+	  	for (int x=0;x<3;x++)
+	  	{
+	  	    gc.queueResearch(UnitType.Knight);
+        }
+	  	for (int x=0;x<3;x++)
+	  	{
+	  		gc.queueResearch(UnitType.Healer);
+	  	}
+	  	for (int x=0;x<3;x++)
+	  	{
+	  		gc.queueResearch(UnitType.Ranger);
+	  	}
 	       
 	        
 	        while (true) {
@@ -110,6 +130,9 @@ public class Player {
 	    	  
 	    	  return false;
 	      }
+	      
+	      // Research Queue
+	     
 	      
 	      // This method will work with the activeFactoryBuilds tree map to allow workers to build on a blueprint
 	      public static void buildFactory(Unit a, Unit b, GameController gc) {
