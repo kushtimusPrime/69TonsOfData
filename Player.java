@@ -25,7 +25,7 @@ import bc.Planet;
 public class Player {
 
      
-	 public static void main(String[] args) {
+	 public static void main(String[] args) throws IllegalArgumentException {
 
 		 
 	        GameController gc = new GameController();
@@ -63,8 +63,10 @@ public class Player {
 	           // Every round the units and location will be updated
 	           for (int i = 0; i < gc.myUnits().size(); i++)
 	        	   {
+	        	   		units.add(gc.myUnits().get(i));
+
 	        	   // Later, we will need to distinguish between robots on earth and mars
-	        		units.add(gc.myUnits().get(i));
+	        		
 	        	   }
 	           
 	           
@@ -250,6 +252,19 @@ public class Player {
   		  }
 	    	  }
 	      }
+	      //Have to implement a better version of this later, but this is a pathfinding method
+	      public static void findPath(GameController gc, MapLocation destination, Unit unit, int[] rotationTries, ArrayList<Direction> directions) {
+	 		 Direction moveHere=unit.location().mapLocation().directionTo(destination);
+	 		 for(int a=0;a<rotationTries.length;a++) {
+	 			 int optimalIndex=directions.indexOf(moveHere);
+	 			 int actualIndex= (optimalIndex+a)%8;
+	 			 Direction actualDirection=directions.get(actualIndex);
+	 			 if(gc.canMove(unit.id(), actualDirection)) {
+	 				 gc.moveRobot(unit.id(), actualDirection);
+	 			 }
+	 		 }
+	 		 
+	 	 }
 		 //This method will determine which round the rocket should launch in order to reach Mars the earliest 
 	 public static long getFirstLaunchRound(GameController gc) {
 		 //currentPattern is the orbit pattern of the map
