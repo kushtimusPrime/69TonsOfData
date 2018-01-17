@@ -8,6 +8,7 @@ import bc.MapLocation;
 import bc.OrbitPattern;
 import bc.Planet;
 import bc.PlanetMap;
+import bc.Team;
 import bc.Unit;
 import bc.UnitType;
 import bc.VecUnit;
@@ -35,6 +36,12 @@ public class Player {
 	        ArrayList<Unit> factories=new ArrayList<Unit>();
 		ArrayList<Unit> knights=new ArrayList<Unit>();
 		ArrayList<Unit> healers = new ArrayList<Unit>();
+		ArrayList<Direction> directions=new ArrayList<Direction>();
+		units.clear();
+		factories.clear();
+		knights.clear();
+		healers.clear();
+		int[] rotationTries= {0,-1,1,-2,2};
 	        gc.queueResearch(UnitType.Worker);
 	    	  
 
@@ -65,10 +72,10 @@ public class Player {
 	           // Every round the units and location will be updated
 	           for (int i = 0; i < gc.myUnits().size(); i++)
 	        	   {
-	        	   if (gc.myUnits().get(i).unitType() == UnitType.Factory) {
+	        	   if (gc.myUnits().get(i).unitType().equals(UnitType.Factory)) {
 	        		   factories.add(gc.myUnits().get(i));
 	        	   }
-			   	        	   if (gc.myUnits().get(i).unitType() == UnitType.Knight) {
+			   	        	   if (gc.myUnits().get(i).unitType().equals(UnitType.Knight)) {
 	        		   knights.add(gc.myUnits().get(i));
 	        	   }
 	        	   		units.add(gc.myUnits().get(i));
@@ -85,20 +92,23 @@ public class Player {
 	        	    blueprintFactory(i, gc);
 	        	   }
 		   }
-			Unit fighter=searchForAttack();
-			if(fighter.equals(null)) {
-			} else {
+			Unit fighter=searchForAttack(gc,knights);
+			try {
+			if(!fighter.equals(null)) {
 				int id=fighter.id();
 				MapLocation locationOF=fighter.location().mapLocation();
 				findPath(gc, locationOF, fighter, rotationTries, directions);
 				KnightAttack( gc, knights,id);
 				
 			}
+			} catch (Exception e ) {
+				
+			}
 	        	checkToBuild(gc);
 	        	checkForKarbonite(gc);
 	        	checkToReplicate(gc);
 			buildHealer(gc, factories, healers);
-			buildKnight(gc,factories,knights);
+			buildKnights(gc,factories);
 				
 	           
 	           
@@ -272,19 +282,7 @@ public class Player {
 	    	  }
 	      }
 	      //Have to implement a better version of this later, but this is a pathfinding method
-	      public static int  {
-	 		 Direction moveHere=unit.location().mapLocation().directionTo(destination);
-	 		 for(int a=0;a<rotationTries.length;a++) {
-	 			 int optimalIndex=directions.indexOf(moveHere);
-	 			 int actualIndex= (optimalIndex+a)%8;
-	 			 Direction actualDirection=directions.get(actualIndex);
-	 			 if(gc.canMove(unit.id(), actualDirection)) {
-	 				 gc.moveRobot(unit.id(), actualDirection);
-	 				 return 1;
-	 			 }
-	 		 }
-	 		 return 0;
-	 	 }
+
 		 //This method will determine which round the rocket should launch in order to reach Mars the earliest 
 	 public static long getFirstLaunchRound(GameController gc) {
 		 //currentPattern is the orbit pattern of the map
@@ -315,6 +313,7 @@ public class Player {
 		 public static void buildKnights(GameController gc,ArrayList<Unit> factories) {
 		 for(int a=0;a<factories.size();a++) {
 			 if(gc.canProduceRobot(factories.get(a).id(),UnitType.Knight)) {
+				 System.out.println("bah");
 				 gc.produceRobot(factories.get(a).id(), UnitType.Knight);
 			 }
 		 }
@@ -334,7 +333,10 @@ public class Player {
 		
 }
 		 public static Unit searchForAttack(GameController gc, ArrayList<Unit> knights) {
-		 Team myTeam=knights.get(0).team();
+		if(knights.size()<=0) {
+			return null;
+		}
+		Team myTeam=knights.get(0).team();
 		 Team enemy;
 		 if(myTeam.equals(Team.Blue)) {
 			 enemy=Team.Red;
@@ -356,17 +358,39 @@ public class Player {
 				  {
 		 if (gc.canAttack(knights.get(x).id(), id) && gc.isAttackReady(knights.get(x).id()))
 		 {
-			 if (gc.canJavelin(knights.get(x).id(), id) && gc.isJavelinReady(knights.get(x).id())))
+			 if (gc.canJavelin(knights.get(x).id(), id) && gc.isJavelinReady(knights.get(x).id()))
 			 {
-				 gc.javelin(knights.get(x).id(), id)
+				 gc.javelin(knights.get(x).id(), id);
 			 }
 			 else 
 			 {
-				 gc.attack(knights.get(x).id(), id)
+				 gc.attack(knights.get(x).id(), id);
 			 }
 		 }
 		 }
 }
+	 public static ArrayList<Direction> setDirectionsArrayList(GameController gc,ArrayList<Direction> directions) {
+	        directions.add(Direction.North);
+	        directions.add(Direction.Northeast);
+	        directions.add(Direction.East);
+	        directions.add(Direction.Southeast);
+	        directions.add(Direction.South);
+	        directions.add(Direction.Southwest);
+	        directions.add(Direction.West);
+	        directions.add(Direction.Northwest);
+	        return directions;
+	 }
+	 public static void findPath(GameController gc, MapLocation destination, Unit unit, int[] rotationTries, ArrayList<Direction> directions) {
+		 Direction moveHere=unit.location().mapLocation().directionTo(destination);
+		 for(int a=0;a<rotationTries.length;a++) {
+			 int optimalIndex=directions.indexOf(moveHere);
+			 int actualIndex= (optimalIndex+a)%8;
+			 Direction actualDirection=directions.get(actualIndex);
+			 if(gc.canMove(unit.id(), actualDirection)) {
+				 gc.moveRobot(unit.id(), actualDirection);
+			 }
+		 }
+		 
+	 }
 	      
-	      }
-
+}
