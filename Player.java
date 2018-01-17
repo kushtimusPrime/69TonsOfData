@@ -34,6 +34,7 @@ public class Player {
 	        ArrayList<Unit> units = new ArrayList<Unit>();
 	        ArrayList<Unit> factories=new ArrayList<Unit>();
 		ArrayList<Unit> knights=new ArrayList<Unit>();
+		ArrayList<Unit> healers = new ArrayList<Unit>();
 	        gc.queueResearch(UnitType.Worker);
 	    	  
 
@@ -83,11 +84,22 @@ public class Player {
 	        	   {
 	        	    blueprintFactory(i, gc);
 	        	   }
-	            }
-	           
+		   }
+			Unit fighter=searchForAttack();
+			if(fighter.equals(null)) {
+			} else {
+				int id=fighter.id();
+				MapLocation locationOF=fighter.location().mapLocation();
+				findPath(gc, locationOF, fighter, rotationTries, directions);
+				KnightAttack( gc, knights,id);
+				
+			}
 	        	checkToBuild(gc);
 	        	checkForKarbonite(gc);
 	        	checkToReplicate(gc);
+			buildHealer(gc, factories, healers);
+			buildKnight(gc,factories,knights);
+				
 	           
 	           
 	           
@@ -260,7 +272,7 @@ public class Player {
 	    	  }
 	      }
 	      //Have to implement a better version of this later, but this is a pathfinding method
-	      public static int findPath(GameController gc, MapLocation destination, Unit unit, int[] rotationTries, ArrayList<Direction> directions) {
+	      public static int  {
 	 		 Direction moveHere=unit.location().mapLocation().directionTo(destination);
 	 		 for(int a=0;a<rotationTries.length;a++) {
 	 			 int optimalIndex=directions.indexOf(moveHere);
@@ -307,6 +319,20 @@ public class Player {
 			 }
 		 }
 	 }
+	public static void buildHealer(GameController gc, ArrayList<Unit> fact, ArrayList<Unit> heal)
+	 {
+
+		 for (int x = 0; x<fact.size(); x++)
+		 {
+			 if (gc.canProduceRobot(fact.get(x).id(), UnitType.Healer))
+			 {
+				 gc.produceRobot(fact.get(x).id(), UnitType.Healer);
+				 
+			 }
+			 		 
+		 }
+		
+}
 		 public static Unit searchForAttack(GameController gc, ArrayList<Unit> knights) {
 		 Team myTeam=knights.get(0).team();
 		 Team enemy;
@@ -324,6 +350,23 @@ public class Player {
 		 }
 		 return null;
 	 }
+	 public static void KnightAttack(GameController gc, ArrayList<Unit> knights, int id)
+	 {
+		 for (int x=0; x<knights.size();x++)
+				  {
+		 if (gc.canAttack(knights.get(x).id(), id) && gc.isAttackReady(knights.get(x).id()))
+		 {
+			 if (gc.canJavelin(knights.get(x).id(), id) && gc.isJavelinReady(knights.get(x).id())))
+			 {
+				 gc.javelin(knights.get(x).id(), id)
+			 }
+			 else 
+			 {
+				 gc.attack(knights.get(x).id(), id)
+			 }
+		 }
+		 }
+}
 	      
 	      }
 
