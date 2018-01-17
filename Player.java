@@ -33,6 +33,7 @@ public class Player {
 	        // These will help keep track of robots and the such
 	        ArrayList<Unit> units = new ArrayList<Unit>();
 	        ArrayList<Unit> factories=new ArrayList<Unit>();
+		ArrayList<Unit> knights=new ArrayList<Unit>();
 	        gc.queueResearch(UnitType.Worker);
 	    	  
 
@@ -65,6 +66,9 @@ public class Player {
 	        	   {
 	        	   if (gc.myUnits().get(i).unitType() == UnitType.Factory) {
 	        		   factories.add(gc.myUnits().get(i));
+	        	   }
+			   	        	   if (gc.myUnits().get(i).unitType() == UnitType.Knight) {
+	        		   knights.add(gc.myUnits().get(i));
 	        	   }
 	        	   		units.add(gc.myUnits().get(i));
 	        	   		
@@ -295,6 +299,30 @@ public class Player {
 			 }
 		 }
 		 return leaveTime;
+	 }
+		 public static void buildKnights(GameController gc,ArrayList<Unit> factories) {
+		 for(int a=0;a<factories.size();a++) {
+			 if(gc.canProduceRobot(factories.get(a).id(),UnitType.Knight)) {
+				 gc.produceRobot(factories.get(a).id(), UnitType.Knight);
+			 }
+		 }
+	 }
+		 public static Unit searchForAttack(GameController gc, ArrayList<Unit> knights) {
+		 Team myTeam=knights.get(0).team();
+		 Team enemy;
+		 if(myTeam.equals(Team.Blue)) {
+			 enemy=Team.Red;
+		 } else {
+			 enemy=Team.Blue;
+		 }
+		 for(int a=0;a<knights.size();a++) {
+			 VecUnit opponents=gc.senseNearbyUnitsByTeam(knights.get(a).location().mapLocation(), knights.get(a).visionRange(), enemy);
+			 if(opponents.size()>1) {
+				 Unit opponent=opponents.get(0);
+				 return opponent;
+			 }
+		 }
+		 return null;
 	 }
 	      
 	      }
