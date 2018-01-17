@@ -32,7 +32,7 @@ public class Player {
 	        
 	        // These will help keep track of robots and the such
 	        ArrayList<Unit> units = new ArrayList<Unit>();
-
+	        ArrayList<Unit> factories=new ArrayList<Unit>();
 	        gc.queueResearch(UnitType.Worker);
 	    	  
 
@@ -63,8 +63,11 @@ public class Player {
 	           // Every round the units and location will be updated
 	           for (int i = 0; i < gc.myUnits().size(); i++)
 	        	   {
+	        	   if (gc.myUnits().get(i).unitType() == UnitType.Factory) {
+	        		   factories.add(gc.myUnits().get(i));
+	        	   }
 	        	   		units.add(gc.myUnits().get(i));
-
+	        	   		
 	        	   // Later, we will need to distinguish between robots on earth and mars
 	        		
 	        	   }
@@ -253,7 +256,7 @@ public class Player {
 	    	  }
 	      }
 	      //Have to implement a better version of this later, but this is a pathfinding method
-	      public static void findPath(GameController gc, MapLocation destination, Unit unit, int[] rotationTries, ArrayList<Direction> directions) {
+	      public static int findPath(GameController gc, MapLocation destination, Unit unit, int[] rotationTries, ArrayList<Direction> directions) {
 	 		 Direction moveHere=unit.location().mapLocation().directionTo(destination);
 	 		 for(int a=0;a<rotationTries.length;a++) {
 	 			 int optimalIndex=directions.indexOf(moveHere);
@@ -261,9 +264,10 @@ public class Player {
 	 			 Direction actualDirection=directions.get(actualIndex);
 	 			 if(gc.canMove(unit.id(), actualDirection)) {
 	 				 gc.moveRobot(unit.id(), actualDirection);
+	 				 return 1;
 	 			 }
 	 		 }
-	 		 
+	 		 return 0;
 	 	 }
 		 //This method will determine which round the rocket should launch in order to reach Mars the earliest 
 	 public static long getFirstLaunchRound(GameController gc) {
@@ -294,5 +298,4 @@ public class Player {
 	 }
 	      
 	      }
-
 
