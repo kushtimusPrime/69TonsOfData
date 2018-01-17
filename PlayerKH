@@ -12,6 +12,7 @@ import bc.StartTurnMessage;
 import bc.Unit;
 import bc.UnitType;
 import bc.VecUnit;
+import bc.VecUnitID;
 import bc.bc;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,15 +47,18 @@ public class Player {
 	  	{
 	  		gc.queueResearch(UnitType.Ranger);
 	  	}
-	  	
 	  	ArrayList<Unit> rockets = new ArrayList<Unit>();
-	  	ArrayList<Unit> factories=new ArrayList<Unit>();
+	  	ArrayList<Unit> unbuiltFactories=new ArrayList<Unit>();
 	  	ArrayList<Direction> directions=new ArrayList<Direction>();
 	  	ArrayList<Unit> workers=new ArrayList<Unit>();
+	  	ArrayList<Unit> builtFactories=new ArrayList<Unit>();
+	  	ArrayList<Unit> knights=new ArrayList<Unit>();
         directions=setDirectionsArrayList(gc,directions);
+        long buildHealer=0;
 	  	
 	        
 	        while (true) {
+	        unbuiltFactories.clear();
 	        // Prints out current round and Karbonite number
 	           System.out.println("Current round: "+gc.round());
 	           System.out.println("Karbonite " + gc.karbonite());
@@ -62,26 +66,40 @@ public class Player {
 	           VecUnit current = gc.myUnits();
 	           for(int a=0;a<current.size();a++) {
 	        	   	if(current.get(a).unitType().equals(UnitType.Factory)) {
-	        	   		if(current.get(a).structureIsBuilt()!=0) {
-	        	   		factories.add(current.get(a));
+	        	   		if(current.get(a).structureIsBuilt()==0) {
+	        	   			unbuiltFactories.add(current.get(a));
+	        	   		} else {
+	        	   			builtFactories.add(current.get(a));
 	        	   		}
+	     
 	        	   	}
 	        	   	if(current.get(a).unitType().equals(UnitType.Worker)) {
 	        	   		workers.add(current.get(a));
 	        	   	}
+	        	   	if(current.get(a).unitType().equals(UnitType.Knight)) {
+	        	   		workers.add(current.get(a));
+	        	   	}
 	           }
 	           long factoryRound=gc.round()%50;
-	           if(factoryRound==1) {
+	           long karbonite=gc.karbonite();
+	           if(factoryRound==1&&karbonite>=100) {
 	        	   blueprintTheFactory(gc,directions,workers);
-	        	   System.out.println("Going in here");
+	        
 	           }
-	           for(int b=0;b<factories.size();b++) {
-	        	   System.out.println("Factory type 4:"+factories.get(b).unitType());
+	           buildTheFactory(gc,unbuiltFactories,workers);
+	           karbonite=gc.karbonite();
+	           long roundNumber=gc.round()%2;
+	           if(karbonite>20&&roundNumber==1) {
+	        	   	buildKnights(gc,builtFactories);	        	   
 	           }
-	           
+	           if(karbonite>20&&roundNumber==1) {
+	        	   	buildHealers(gc,builtFactories);
+	           }
+
+	           unloadGarrison(gc,builtFactories,directions);
+	           attack(gc,knights);
 	           // Only occurs in the first round
 	           if (gc.round() == 1 && gc.planet().equals(Planet.Earth)) {
-	        	   System.out.println("Should only print in round one");
 	        	   for (int i = 0; i < current.size(); i++)
 	        	   {
 	        	    //blueprintFactory(i, gc, current);
@@ -98,7 +116,7 @@ public class Player {
 	        	checkForKarbonite(gc, current);
 	        	checkToReplicate(gc, current);
 	        	
-	        	if (gc.round() == 125 && gc.planet() == Planet.Earth) {
+	      /*  	if (gc.round() == 125 && gc.planet() == Planet.Earth) {
 	        		rocketCount = 0;
 	        		System.out.println(blueprintRocket(gc, current));
 	        	}
@@ -142,12 +160,13 @@ public class Player {
         	   if (gc.canLaunchRocket(current.get(i).id(), new MapLocation(Planet.Mars, 5, 5))) {
         	         gc.launchRocket(current.get(i).id(), new MapLocation(Planet.Mars, 5, 5));
         	         System.out.println("Rocket is launched");
-           }
+           } 
+        	   
            }
         	   }
-           }
-
-	           gc.nextTurn();
+           }*/
+	        	gc.nextTurn();
+	           
 	        }
 	        }
   
@@ -418,16 +437,13 @@ public class Player {
 	    		  }
 	    	  }
 	      }
-          public static void buildKnight(GameController gc) {
-        	  
-          }
+
           public static int blueprintTheFactory(GameController gc,ArrayList<Direction> directions,ArrayList<Unit> workers) {
         	  System.out.println("Number of workers: "+workers.size());
         	  for(int a=0;a<workers.size();a++) {
         		  for(int b=0;b<directions.size();b++) {
         			  if(gc.canBlueprint(workers.get(a).id(), UnitType.Factory, directions.get(b))) {
         				  gc.blueprint(workers.get(a).id(), UnitType.Factory, directions.get(b));
-        				  System.out.println("Factory blueprinted");
         				  return 1;
         			  }
         		  }
@@ -447,4 +463,58 @@ public class Player {
  	        directions.add(Direction.Northwest);
  	        return directions;
  	 }
+     	 public static void buildTheFactory(GameController gc,ArrayList<Unit> unbuiltFactories,ArrayList<Unit> workers) {
+     		 for(int a=0;a<workers.size();a++) {
+     			 for(int b=0;b<unbuiltFactories.size();b++) {
+     				 if(gc.canBuild(workers.get(a).id(), unbuiltFactories.get(b).id())) {
+     					 gc.build(workers.get(a).id(), unbuiltFactories.get(b).id());
+     				 }
+     			 }
+     		 } 
+     	 }
+     	 public static int buildKnights(GameController gc,ArrayList<Unit> builtFactories) {
+     		 for(int a=0;a<builtFactories.size();a++) {
+     			 if(gc.canProduceRobot(builtFactories.get(a).id(), UnitType.Knight) ) {
+     				 gc.produceRobot(builtFactories.get(a).id(), UnitType.Knight);
+     				 System.out.println("produced a knight");
+     				 return 1;
+     			 }
+
+     		 }
+     		 return 0;
+     		 
+     	 }
+     	 public static int buildHealers(GameController gc,ArrayList<Unit> builtFactories) {
+ 			 System.out.println("Entering the method");
+     		 for(int z=0;z<builtFactories.size();z++) {
+     			 if(gc.canProduceRobot(builtFactories.get(z).id(), UnitType.Healer) ) {
+     				 gc.produceRobot(builtFactories.get(z).id(), UnitType.Healer);
+     				 System.out.println("produced a healer");
+     				 return 1;
+     			 } 
+
+     		 }
+     		 return 0;
+     		 
+     		 
+     	 }
+     	 public static void unloadGarrison(GameController gc,ArrayList<Unit> builtFactories,ArrayList<Direction> directions) {
+     		 for(int b=0;b<builtFactories.size();b++) {
+     				 for(int d=0;d<directions.size();d++) {
+     					 if(gc.canUnload(builtFactories.get(b).id(), directions.get(d))) {
+     						 gc.unload(builtFactories.get(b).id(), directions.get(d));
+     					 }
+     				 }
+
+     		 }
+    
+     		 
+     	 }
+     	 public static void attack(GameController gc,ArrayList<Unit> knights) {
+     		 
+     		 
+     	 }
+     	 public static void destination(GameController gc) {
+     		 
+     	 }
 }
