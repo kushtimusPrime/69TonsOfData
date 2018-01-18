@@ -9,6 +9,7 @@ import bc.OrbitPattern;
 import bc.Planet;
 import bc.PlanetMap;
 import bc.StartTurnMessage;
+import bc.Team;
 import bc.Unit;
 import bc.UnitType;
 import bc.VecUnit;
@@ -33,6 +34,7 @@ public class Player {
 	    for (int y=0;y<3;y++)
 	  	{
 	  		gc.queueResearch(UnitType.Rocket);
+	  		
 	  	
 	  	}
 	  	for (int x=0;x<3;x++)
@@ -54,7 +56,9 @@ public class Player {
 	  	ArrayList<Unit> builtFactories=new ArrayList<Unit>();
 	  	ArrayList<Unit> knights=new ArrayList<Unit>();
         directions=setDirectionsArrayList(gc,directions);
+        Team myTeam;
         long buildHealer=0;
+        int[] rotationTries= {0,-1,1,-2,2};
 	  	
 	        
 	        while (true) {
@@ -64,6 +68,11 @@ public class Player {
 	           System.out.println("Karbonite " + gc.karbonite());
 	           
 	           VecUnit current = gc.myUnits();
+	           try {
+	           myTeam=current.get(0).team();
+	           }catch(Exception e) {
+	        	   
+	           }
 	           for(int a=0;a<current.size();a++) {
 	        	   	if(current.get(a).unitType().equals(UnitType.Factory)) {
 	        	   		if(current.get(a).structureIsBuilt()==0) {
@@ -77,7 +86,7 @@ public class Player {
 	        	   		workers.add(current.get(a));
 	        	   	}
 	        	   	if(current.get(a).unitType().equals(UnitType.Knight)) {
-	        	   		workers.add(current.get(a));
+	        	   		knights.add(current.get(a));
 	        	   	}
 	           }
 	           long factoryRound=gc.round()%50;
@@ -97,7 +106,13 @@ public class Player {
 	           }
 
 	           unloadGarrison(gc,builtFactories,directions);
-	           attack(gc,knights);
+	           try {
+	           myTeam=current.get(0).team();
+	           attack(gc,knights,myTeam,rotationTries,directions);
+	           System.out.println("Did the attack thing");
+	           } catch (Exception e) {
+	        	   
+	           }
 	           // Only occurs in the first round
 	           if (gc.round() == 1 && gc.planet().equals(Planet.Earth)) {
 	        	   for (int i = 0; i < current.size(); i++)
@@ -510,11 +525,31 @@ public class Player {
     
      		 
      	 }
-     	 public static void attack(GameController gc,ArrayList<Unit> knights) {
+     	 public static void attack(GameController gc,ArrayList<Unit> knights,Team myTeam,int[] rotationTries,ArrayList<Direction> directions) {
+     		 for(int a=0;a<knights.size();a++) {
+     			 System.out.println("Did destination");
+
+     			 Unit finalDestination=destination(gc,myTeam,knights.get(a));
+     			 findPath(gc,finalDestination.location().mapLocation(),knights.get(a),rotationTries,directions);
+     			 System.out.println("Did find path");
+     			 if(gc.canAttack(knights.get(a).id(), finalDestination.id())&&gc.isAttackReady(knights.get(a).id())) {
+     				 gc.attack(knights.get(a).id(), finalDestination.id());
+     				 System.out.println("I attacked");
+     			 }
+     			 
+     		 }
      		 
      		 
      	 }
-     	 public static void destination(GameController gc) {
+     	 public static Unit destination(GameController gc,Team myTeam,Unit unit) {
+     		 Team enemyTeam;
+     		 if(myTeam.equals(Team.Red)) {
+     			 enemyTeam=Team.Blue;
+     		 } else {
+     			 enemyTeam=Team.Red;
+     		 }
+     		 VecUnit listOfUnits=gc.senseNearbyUnitsByTeam(unit.location().mapLocation(), unit.visionRange(), enemyTeam);
+     		 return listOfUnits.get(0);
      		 
      	 }
 }
