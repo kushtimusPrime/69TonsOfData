@@ -59,6 +59,7 @@ public class Player {
 	  	ArrayList<Unit> unbuiltRockets=new ArrayList<Unit>();
 	  	ArrayList<Unit> builtRockets=new ArrayList<Unit>();
 	  	ArrayList<MapLocation> karboniteLocationsEarth=new ArrayList<MapLocation>();
+	  	ArrayList<Unit> structures=new ArrayList<Unit>();
 	  	
         directions=setDirectionsArrayList(gc,directions);
         Team myTeam;
@@ -68,18 +69,47 @@ public class Player {
 
 
 	        
-	        while (true) {
+	        while (true) {     
 	        // Prints out current round and Karbonite number
 	           System.out.println("Current round: "+gc.round());
 	           System.out.println("Karbonite " + gc.karbonite());
+	   	  	   VecUnit myUnits=gc.myUnits();
+	   	  	   for(int a=0;a<myUnits.size();a++) {
+	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Worker)) {
+	   	  			   
+	   	  		   }
+	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Knight)) {
+	   	  			   
+	   	  		   }
+	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Ranger)) {
+	   	  			   
+	   	  		   }
+	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Mage)) {
+	   	  			   
+	   	  		   }
+	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Healer)) {
+	   	  			   
+	   	  		   }
+	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Factory)) {
+	   	  			   
+	   	  		   }
+	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Rocket)) {
+	   	  			   
+	   	  		   }
+	   	  	   }
+
 	           
 	           VecUnit current = gc.myUnits();
 	           myTeam=gc.team();
 	           for(int a=0;a<current.size();a++) {
 	        	   	if(current.get(a).unitType().equals(UnitType.Factory)) {
 	        	   		if(current.get(a).structureIsBuilt()==0) {
-	        	   			unbuiltFactories.add(current.get(a));
+	        	   			System.out.println(unbuiltFactories.contains(current.get(a)));
+	        	   			if(!unbuiltFactories.contains(current.get(a))) {
+		        	   			unbuiltFactories.add(current.get(a));
+	        	   			}
 	        	   		} else {
+	        	   			
 	        	   			builtFactories.add(current.get(a));
 	        	   		}
 	     
@@ -109,10 +139,16 @@ public class Player {
 	        	   	}
 
 	           }
+	           structures.addAll(builtRockets);
+	           structures.addAll(unbuiltRockets);
+	           structures.addAll(builtFactories);
+	           structures.addAll(unbuiltFactories);
+	           System.out.println("Big test"+Arrays.toString(unbuiltFactories.toArray()));
+
 	           long factoryRound=gc.round()%50;
 	           long karbonite=gc.karbonite();
 	           if(factoryRound==1&&karbonite>=100) {
-	        	   blueprintTheFactory(gc,directions,workers);
+	        	   blueprintTheFactory(gc,directions,workers,unbuiltFactories);
 	           }
 	           buildTheFactory(gc,unbuiltFactories,workers);
 	           karbonite=gc.karbonite();
@@ -122,14 +158,16 @@ public class Player {
 	           }
 
 	           unloadGarrison(gc,builtFactories,directions);
+	        	checkForKarbonite(gc, workers,directions);
+
 	   	  	if(gc.planet().equals(Planet.Earth)) {
 	   		  	karboniteLocationsEarth=setKarboniteDestination(gc,karboniteLocationsEarth,planetMap);
-	   		  	for(int workerTracker=0;workerTracker<workers.size();workerTracker++) {
-	   		  		MapLocation placeToGo=finalKarboniteDestination(gc,workers.get(workerTracker),karboniteLocationsEarth);
-	   		  	}
+	   		  	//for(int workerTracker=0;workerTracker<workers.size();workerTracker++) {
+	   		  		MapLocation placeToGo=finalKarboniteDestination(gc,workers.get(0),karboniteLocationsEarth);
+	   		  		pathFind(gc,placeToGo,rotationTries,workers.get(0));
+	   		  	//}
 	   		}
-	        	checkForKarbonite(gc, workers,directions);
-	        	checkToReplicate(gc, workers);
+	       // 	checkToReplicate(gc, workers);
 	        	gc.nextTurn();
 	           
 
@@ -143,13 +181,11 @@ public class Player {
 	      public static void checkForKarbonite(GameController gc, ArrayList<Unit> currentVec,ArrayList<Direction> directions) {
 	    	  for (int i = 0; i < currentVec.size(); i++) {
 	    		  Unit current = currentVec.get(i);
-	    		  if(current.workerHasActed()==0) {
 	    			  for(int a=0;a<directions.size();a++) {
 	    				  if(gc.canHarvest(current.id(), directions.get(a))) {
 	    					  gc.harvest(current.id(), directions.get(a));
 	    				  }
 	    			  }
-	    		  }
 	    	  }
 	    		  
 	    		/*  if (current.workerHasActed() == 0) {
@@ -266,7 +302,7 @@ public class Player {
 	    	  return leaveTime;
 	      }
 
-          public static int blueprintTheFactory(GameController gc,ArrayList<Direction> directions,ArrayList<Unit> workers) {
+          public static int blueprintTheFactory(GameController gc,ArrayList<Direction> directions,ArrayList<Unit> workers,ArrayList<Unit> unbuiltFactories) {
         	  //System.out.println("Number of workers: "+workers.size());
         	  for(int a=0;a<workers.size();a++) {
         		  for(int b=0;b<directions.size();b++) {
@@ -300,18 +336,6 @@ public class Player {
      			 }
      		 } 
      	 }
-     	 public static int buildKnights(GameController gc,ArrayList<Unit> builtFactories) {
-     		 for(int a=0;a<builtFactories.size();a++) {
-     			 if(gc.canProduceRobot(builtFactories.get(a).id(), UnitType.Knight) ) {
-     				 gc.produceRobot(builtFactories.get(a).id(), UnitType.Knight);
-     				 //System.out.println("produced a knight");
-     				 return 1;
-     			 }
-
-     		 }
-     		 return 0;
-     		 
-     	 }
 
      	 public static void unloadGarrison(GameController gc,ArrayList<Unit> builtFactories,ArrayList<Direction> directions) {
      		 for(int b=0;b<builtFactories.size();b++) {
@@ -342,37 +366,45 @@ public class Player {
      		 return karboniteLocationsEarth;
      	 }
      	 public static MapLocation finalKarboniteDestination(GameController gc, Unit worker,ArrayList<MapLocation> karboniteLocationsEarth) {
-     		 int min=1000;
+     		 long min=1000;
      		 MapLocation optimalMapLocation=null;
      		 for(int a=0;a<karboniteLocationsEarth.size();a++) {
-     			 MapLocation workerLocation=worker.location().mapLocation();
-     			 int xDiff=(workerLocation.getX()-karboniteLocationsEarth.get(a).getX())*(workerLocation.getX()-karboniteLocationsEarth.get(a).getX());
-     			 int yDiff=(workerLocation.getY()-karboniteLocationsEarth.get(a).getY())*(workerLocation.getY()-karboniteLocationsEarth.get(a).getY());
-     			 System.out.println("xDiff: "+xDiff+"yDiff: "+yDiff);
+     			 long distance=worker.location().mapLocation().distanceSquaredTo(karboniteLocationsEarth.get(a));
+     			 if(distance<min) {
+     				 min=distance;
+     				 optimalMapLocation=karboniteLocationsEarth.get(a);
+     				 System.out.println("Got the minimum "+min);
+     				 System.out.println("Karbonite maplocation: "+optimalMapLocation);
+     			 }
      		 }
+     		 //System.out.println("MapLocation: "+optimalMapLocation);
+     		// System.out.println("Worker location: "+worker.location().mapLocation());
      		 return optimalMapLocation;
+     		 //gc.canMove(robot_id, direction)
+     		// gc.isMoveReady(robot_id)
+     	 }
+     	 public static int pathFind(GameController gc,MapLocation finalMapLocation,int[] rotationTries,Unit unit) {
+     		 Direction goTo=unit.location().mapLocation().directionTo(finalMapLocation);
+     		 System.out.println("Direction: "+goTo);
+     		 if(gc.isMoveReady(unit.id())) {
+     			 for(int a=0;a<rotationTries.length;a++) {
+     				 if(gc.canMove(unit.id(), goTo)) {
+     					 gc.moveRobot(unit.id(), goTo);
+     					 return 1;
+     				 }
+     			 }
+     		 }
+     		 return 0;
      	 }
      	 /*
-     	  * main method implementation
-     	  * for(allWorkers) {
-     	  * 		finalKarboniteDestination(gc,worker);
+     	  * public static void pathFind(gc,finalMapLocation,rotationTries,Unit unit) {
+     	  * 		Direction goTo=mapLocation.directionTo();
+     	  * 		if(gc.isMoveReady(unit.id)==true)
+     	  * 		for(int a=0;a<rotationTries.length;a++) {
+     	  * 			if(gc.canMove(unit.id,goTo)) {
+     	  * 				gc.Move(unit.id,goTto);
+     	  * 
      	  * }
      	  */
- 	  	/* This picks the specific destination for each worker to move to for karbonite
- 	  	 *MapLocation moveToKarbonite() {
- 	  	 *int min=1000;
- 	  	 *MapLocation optimalMapLocation=null;
- 	  	 *for(workers)
- 	  	 *	for(karbonite)
- 	  	 *		maplocation=workerlocation=workers.maplocation
- 	  	 *		xDiff=(maplocation.getX-karbonite.getX)*(maplocation.getX-karbonite.getX);
- 	  	 *		yDiff=(maplocation.getY-karbonite.getY)*(maplocation.getY-karbonite.getY);
- 	  	 *		distance=xDiff+yDiff;
- 	  	 *		if(distance<min) {
- 	  	 *			min=distance;
- 	  	 *			optimalMapLocation=karbonite;
- 	  	 *		}
- 	  	 *return optimalMapLocation;
- 	  	 *}
- 	  	 */
+
 }
