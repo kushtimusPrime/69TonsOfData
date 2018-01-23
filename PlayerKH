@@ -61,6 +61,28 @@ public class Player {
         Team myTeam;
         long buildHealer=0;
         int[] rotationTries= {0,-1,1,-2,2,-3,3,-4,4};
+        /*
+         * Main method worker priority section
+         * Workers Earth
+         * 	Only 4
+         * 	First, build factories in close proximity
+         * 	Next, go to get karbonite
+         * 	Go back and build rocket
+         * 	Stay near that area until death
+         * Workers Mars
+         * 	Replicate a crap ton
+         * Factories
+         * 	
+         * Factories
+         * Blueprint one factory at a time
+         * Workers stay and build
+         * Make 4 factories
+         * limit worker count to 4
+         * Build rocket at round 250
+         * Only one rocket builds, but then workers replicate a crap ton, no rangers are made in this process
+         * 
+         * 
+         */
 	        while (true) {
 	        // Prints out current round and Karbonite number
 	        	   workers.clear();
@@ -338,8 +360,8 @@ public class Player {
      			 if(distance<min) {
      				 min=distance;
      				 optimalMapLocation=karboniteLocationsEarth.get(a);
-     				 System.out.println("Got the minimum "+min);
-     				 System.out.println("Karbonite maplocation: "+optimalMapLocation);
+     				 //System.out.println("Got the minimum "+min);
+     				// System.out.println("Karbonite maplocation: "+optimalMapLocation);
      			 }
      			 }
      			 } catch (Exception e) {
@@ -376,11 +398,14 @@ public class Player {
      		 
      	 }
      	 public static int randomPathFind(GameController gc,ArrayList<Direction> directions, Unit robot) {
-     		 for(int a=0;a<directions.size();a++) {
- 				 if(gc.canMove(robot.id(), directions.get(a))&&gc.isMoveReady(robot.id())) {
- 					 gc.moveRobot(robot.id(), directions.get(a));
- 					 return 1;
- 				 }
+     		 if(gc.isMoveReady(robot.id())) {
+     			 while(true) {
+     				 int randomNumber=(int)(Math.random()*8);
+     				 if(gc.canMove(robot.id(), directions.get(randomNumber))) {
+     					 gc.moveRobot(robot.id(), directions.get(randomNumber));
+     					 return 1;
+     				 }
+     			 }
      		 }
      		 return 0;
      	 }
@@ -396,4 +421,3 @@ public class Player {
      	  */
 
 }
-
