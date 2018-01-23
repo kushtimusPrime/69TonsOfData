@@ -21,11 +21,6 @@ import bc.Planet;
 
 
 public class Player {
-	
-	private static int workerCount;
-	private static int rocketCount;
-
-     
 	 public static void main(String[] args) throws NullPointerException {
 	   GameController gc = new GameController();
 	  gc.queueResearch(UnitType.Worker);
@@ -59,23 +54,32 @@ public class Player {
 	  	ArrayList<Unit> unbuiltRockets=new ArrayList<Unit>();
 	  	ArrayList<Unit> builtRockets=new ArrayList<Unit>();
 	  	ArrayList<MapLocation> karboniteLocationsEarth=new ArrayList<MapLocation>();
+	  	PlanetMap planetMap=gc.startingMap(gc.planet());
 	  	ArrayList<Unit> structures=new ArrayList<Unit>();
-	  	
+	  	karboniteLocationsEarth=setKarboniteDestination(gc,karboniteLocationsEarth,planetMap);
         directions=setDirectionsArrayList(gc,directions);
         Team myTeam;
         long buildHealer=0;
-        int[] rotationTries= {0,-1,1,-2,2};
-	  	PlanetMap planetMap=gc.startingMap(gc.planet());
-
-
-	        
-	        while (true) {     
+        int[] rotationTries= {0,-1,1,-2,2,-3,3,-4,4};
+	        while (true) {
 	        // Prints out current round and Karbonite number
+	        	   workers.clear();
 	           System.out.println("Current round: "+gc.round());
 	           System.out.println("Karbonite " + gc.karbonite());
 	   	  	   VecUnit myUnits=gc.myUnits();
 	   	  	   for(int a=0;a<myUnits.size();a++) {
 	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Worker)) {
+	   	  			   checkForKarbonite(gc,myUnits.get(a),directions);
+	   	  				   MapLocation possibleLocation=finalKarboniteDestination(gc,myUnits.get(a),karboniteLocationsEarth);
+	   	  				   MapLocation stupidLocation=new MapLocation(Planet.Earth,0,0);
+	   	  				   if(possibleLocation.equals(stupidLocation)) {
+		   	  				   randomPathFind(gc,directions,gc.myUnits().get(a));
+	   	  				   } else {
+	   	  				   pathFind(gc,possibleLocation,rotationTries,myUnits.get(a),directions);
+	   	  				   }
+	   	  			   //replicate(gc,myUnits.get(a),directions);
+	   	  			  // blueprintTheFactory(gc,directions,myUnits.get(a));
+	   	  			   workers.add(myUnits.get(a));
 	   	  			   
 	   	  		   }
 	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Knight)) {
@@ -91,6 +95,9 @@ public class Player {
 	   	  			   
 	   	  		   }
 	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Factory)) {
+	   	  			   if(myUnits.get(a).structureIsBuilt()==0) {
+	   	  				   buildTheFactory(gc,myUnits.get(a),workers);
+	   	  			   }
 	   	  			   
 	   	  		   }
 	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Rocket)) {
@@ -98,7 +105,7 @@ public class Player {
 	   	  		   }
 	   	  	   }
 
-	           
+	           /*
 	           VecUnit current = gc.myUnits();
 	           myTeam=gc.team();
 	           for(int a=0;a<current.size();a++) {
@@ -167,7 +174,7 @@ public class Player {
 	   		  		pathFind(gc,placeToGo,rotationTries,workers.get(0));
 	   		  	//}
 	   		}
-	       // 	checkToReplicate(gc, workers);
+	       // 	checkToReplicate(gc, workers);*/
 	        	gc.nextTurn();
 	           
 
@@ -178,13 +185,14 @@ public class Player {
 	
 	        
 	      // Checks for karbonite and mines karbonite if available
-	      public static void checkForKarbonite(GameController gc, ArrayList<Unit> currentVec,ArrayList<Direction> directions) {
-	    	  for (int i = 0; i < currentVec.size(); i++) {
-	    		  Unit current = currentVec.get(i);
+	      public static void checkForKarbonite(GameController gc, Unit worker,ArrayList<Direction> directions) {
 	    			  for(int a=0;a<directions.size();a++) {
-	    				  if(gc.canHarvest(current.id(), directions.get(a))) {
-	    					  gc.harvest(current.id(), directions.get(a));
+	    				  if(gc.canHarvest(worker.id(), directions.get(a))) {
+	    					  gc.harvest(worker.id(), directions.get(a));
 	    				  }
+	    			  }
+	    			  if(gc.canHarvest(worker.id(), Direction.Center)) {
+	    				  gc.harvest(worker.id(), Direction.Center);
 	    			  }
 	    	  }
 	    		  
@@ -229,51 +237,6 @@ public class Player {
 	    				  }
 	    			  }
 	    		  }*/
-	    	  }
-	      
-	     // Up to 50 workers, workers will replicate 
-	      public static void checkToReplicate(GameController gc, ArrayList<Unit> current) {
-	    	  if (workerCount <= 50) {
-	    	  for (int i = 0; i < current.size(); i++) {
-	    		  if (current.get(i).unitType() == UnitType.Worker) {
-	    		  if (gc.canReplicate(current.get(i).id(), Direction.North) && gc.karbonite() >= 150 && current.get(i).abilityHeat() < 10) {
-	    			  gc.replicate(current.get(i).id(), Direction.North);
-	    			  workerCount++;
-	    		  }
-	    		  else if (gc.canReplicate(current.get(i).id(), Direction.Northeast) && gc.karbonite() >= 150 && current.get(i).abilityHeat() < 10) {
-	    			  gc.replicate(current.get(i).id(), Direction.Northeast);
-	    			  workerCount++;
-	    		  }
-	    		  else if (gc.canReplicate(current.get(i).id(), Direction.Northwest) && gc.karbonite() >= 150 && current.get(i).abilityHeat() < 10) {
-	    			  gc.replicate(current.get(i).id(), Direction.Northwest);
-	    			  workerCount++;
-	    		  }
-	    		else  if (gc.canReplicate(current.get(i).id(), Direction.East) && gc.karbonite() >= 150 && current.get(i).abilityHeat() < 10) {
-		    			  gc.replicate(current.get(i).id(), Direction.East);
-		    			  workerCount++;
-		    		  
-	    		  }
-	    		else  if (gc.canReplicate(current.get(i).id(), Direction.West) && gc.karbonite() >= 150 && current.get(i).abilityHeat() < 10) {
-	    			  gc.replicate(current.get(i).id(), Direction.West);
-	    			  workerCount++;
-  		  }
-	    		else  if (gc.canReplicate(current.get(i).id(), Direction.South) && gc.karbonite() >= 150 && current.get(i).abilityHeat() < 10) {
-	    			  gc.replicate(current.get(i).id(), Direction.South);
-	    			  workerCount++;
-  		  }
-	    		else  if (gc.canReplicate(current.get(i).id(), Direction.Southeast) && gc.karbonite() >= 150 && current.get(i).abilityHeat() < 10) {
-	    			  gc.replicate(current.get(i).id(), Direction.Southeast);
-	    			  workerCount++;
-  		  }
-	    		else  if (gc.canReplicate(current.get(i).id(), Direction.Southwest) && gc.karbonite() >= 150 && current.get(i).abilityHeat() < 10) {
-	    			  gc.replicate(current.get(i).id(), Direction.Southwest);
-	    			  workerCount++;
-	    		}	  
-  		  }
-	    	  }
-	      }
-	      }
-	      
 
 	      public static long getFirstLaunchRound(GameController gc) {
 	    	  //currentPattern is the orbit pattern of the map
@@ -302,17 +265,18 @@ public class Player {
 	    	  return leaveTime;
 	      }
 
-          public static int blueprintTheFactory(GameController gc,ArrayList<Direction> directions,ArrayList<Unit> workers,ArrayList<Unit> unbuiltFactories) {
+          public static int blueprintTheFactory(GameController gc,ArrayList<Direction> directions,Unit worker) {
         	  //System.out.println("Number of workers: "+workers.size());
-        	  for(int a=0;a<workers.size();a++) {
         		  for(int b=0;b<directions.size();b++) {
-        			  if(gc.canBlueprint(workers.get(a).id(), UnitType.Factory, directions.get(b))) {
-        				  gc.blueprint(workers.get(a).id(), UnitType.Factory, directions.get(b));
+        			  if(gc.canBlueprint(worker.id(), UnitType.Factory, directions.get(b))) {
+        				  gc.blueprint(worker.id(), UnitType.Factory, directions.get(b));
         				  return 1;
         			  }
         		  }
-        	  }
-        	  
+        		  if(gc.canBlueprint(worker.id(), UnitType.Factory, Direction.Center)) {
+        			  gc.blueprint(worker.id(), UnitType.Factory, Direction.Center);
+        			  return 1;
+        		  }
         	  return 0;
         	  
           }
@@ -327,13 +291,11 @@ public class Player {
  	        directions.add(Direction.Northwest);
  	        return directions;
  	 }
-     	 public static void buildTheFactory(GameController gc,ArrayList<Unit> unbuiltFactories,ArrayList<Unit> workers) {
+     	 public static void buildTheFactory(GameController gc,Unit unbuiltFactory,ArrayList<Unit> workers) {
      		 for(int a=0;a<workers.size();a++) {
-     			 for(int b=0;b<unbuiltFactories.size();b++) {
-     				 if(gc.canBuild(workers.get(a).id(), unbuiltFactories.get(b).id())) {
-     					 gc.build(workers.get(a).id(), unbuiltFactories.get(b).id());
+     				 if(gc.canBuild(workers.get(a).id(), unbuiltFactory.id())) {
+     					 gc.build(workers.get(a).id(), unbuiltFactory.id());
      				 }
-     			 }
      		 } 
      	 }
 
@@ -344,6 +306,7 @@ public class Player {
      						 gc.unload(builtFactories.get(b).id(), directions.get(d));
      					 }
      				 }
+
 
      		 }
     
@@ -367,14 +330,20 @@ public class Player {
      	 }
      	 public static MapLocation finalKarboniteDestination(GameController gc, Unit worker,ArrayList<MapLocation> karboniteLocationsEarth) {
      		 long min=1000;
-     		 MapLocation optimalMapLocation=null;
+     		 MapLocation optimalMapLocation=new MapLocation(Planet.Earth,0,0);
      		 for(int a=0;a<karboniteLocationsEarth.size();a++) {
+     			 try {
+     			 if(gc.karboniteAt(karboniteLocationsEarth.get(a))>0) {
      			 long distance=worker.location().mapLocation().distanceSquaredTo(karboniteLocationsEarth.get(a));
      			 if(distance<min) {
      				 min=distance;
      				 optimalMapLocation=karboniteLocationsEarth.get(a);
      				 System.out.println("Got the minimum "+min);
      				 System.out.println("Karbonite maplocation: "+optimalMapLocation);
+     			 }
+     			 }
+     			 } catch (Exception e) {
+     				 
      			 }
      		 }
      		 //System.out.println("MapLocation: "+optimalMapLocation);
@@ -383,16 +352,35 @@ public class Player {
      		 //gc.canMove(robot_id, direction)
      		// gc.isMoveReady(robot_id)
      	 }
-     	 public static int pathFind(GameController gc,MapLocation finalMapLocation,int[] rotationTries,Unit unit) {
+     	 public static int pathFind(GameController gc,MapLocation finalMapLocation,int[] rotationTries,Unit unit,ArrayList<Direction> directions) {
+     		 try {
      		 Direction goTo=unit.location().mapLocation().directionTo(finalMapLocation);
-     		 System.out.println("Direction: "+goTo);
-     		 if(gc.isMoveReady(unit.id())) {
      			 for(int a=0;a<rotationTries.length;a++) {
-     				 if(gc.canMove(unit.id(), goTo)) {
+     				 if(gc.canMove(unit.id(), goTo)&&gc.isMoveReady(unit.id())) {
      					 gc.moveRobot(unit.id(), goTo);
      					 return 1;
      				 }
      			 }
+     		 } catch (Exception e) {
+     			 
+     		 }
+     		 randomPathFind(gc,directions,unit);
+     		 return 0;
+     	 }
+     	 public static void replicate(GameController gc,Unit worker,ArrayList<Direction> directions) {
+     		 for(int a=0;a<directions.size();a++) {
+     			 if(gc.canReplicate(worker.id(), directions.get(a))) {
+     				 gc.replicate(worker.id(), directions.get(a));
+     			 }
+     		 }
+     		 
+     	 }
+     	 public static int randomPathFind(GameController gc,ArrayList<Direction> directions, Unit robot) {
+     		 for(int a=0;a<directions.size();a++) {
+ 				 if(gc.canMove(robot.id(), directions.get(a))&&gc.isMoveReady(robot.id())) {
+ 					 gc.moveRobot(robot.id(), directions.get(a));
+ 					 return 1;
+ 				 }
      		 }
      		 return 0;
      	 }
@@ -408,3 +396,4 @@ public class Player {
      	  */
 
 }
+
