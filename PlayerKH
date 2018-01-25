@@ -60,7 +60,7 @@ public class Player {
     			System.out.println("Current round:"+gc.round());
     			System.out.println("Karbonite:"+gc.karbonite());
     			VecUnit myUnits=gc.myUnits();
-    			VecUnit enemyUnits=gc.senseNearbyUnitsByTeam(new MapLocation(Planet.Earth,(int)planetMap.getWidth()/2,(int)planetMap.getHeight()/2), (planetMap.getHeight()/2)*(planetMap.getHeight()/2), enemyTeam);
+    			VecUnit enemyUnits=gc.senseNearbyUnitsByTeam(new MapLocation(Planet.Earth,(int)planetMap.getWidth()/2,(int)planetMap.getHeight()/2), 10*((planetMap.getHeight()/2)*(planetMap.getHeight()/2)), enemyTeam);
     			for(int d=0;d<myUnits.size();d++) {
     			    if(myUnits.get(d).unitType().equals(UnitType.Worker)) {
     			    		workers.add(myUnits.get(d));
