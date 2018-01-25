@@ -1,4 +1,4 @@
-// Nathan Hellstedt, Kysh Hari, Charlie Little
+// Nathan Hellstedt, Kush Hari, Gordon MacDonald
 
 import bc.Direction;
 import bc.GameController;
@@ -21,12 +21,10 @@ import bc.Planet;
 
 
 public class Player {
-	
-	
 	 public static void main(String[] args) throws NullPointerException {
 	   GameController gc = new GameController();
 	  gc.queueResearch(UnitType.Worker);
-	     
+
 	    for (int y=0;y<3;y++)
 	  	{
 	  		gc.queueResearch(UnitType.Rocket);
@@ -63,18 +61,26 @@ public class Player {
         Team myTeam;
         long buildHealer=0;
         int[] rotationTries= {0,-1,1,-2,2,-3,3,-4,4};
+        int factoryCounter=0;
+        int workerCounter=4;
         /*
          * Main method worker priority section
          * Workers Earth
          * 	Only 4
          * 	First, build factories in close proximity
          * 	Next, go to get karbonite
-         * 	Go back and build rocket
+         * 	Go back and build rocket (20 rounds prior)
          * 	Stay near that area until death
          * Workers Mars
          * 	Replicate a crap ton
          * Factories
-         * 	
+         * 	Build 4 factories
+         * 	Blueprint, then immediately build, and repeat 4 times
+         * Rockets
+         * 	Build 2 rockets
+         * 	Back to back after closest round	
+         * 	Blueprint 10 rounds prior
+         * 
          * Factories
          * Blueprint one factory at a time
          * Workers stay and build
@@ -88,46 +94,24 @@ public class Player {
         
         long roundToLeave = getFirstLaunchRound(gc);
         
+        System.out.println(roundToLeave);
+        
 	        while (true) {
 	        // Prints out current round and Karbonite number
 	        	   workers.clear();
 	        	   unbuiltFactories.clear();
+	        	   builtFactories.clear();
+	        	   unbuiltRockets.clear();
+	        	   builtRockets.clear();
 	        	   
-	           System.out.println("Current round: "+gc.round());
-	           System.out.println("Karbonite " + gc.karbonite());
 	   	  	   VecUnit myUnits=gc.myUnits();
 	   	  	   for(int a=0;a<myUnits.size();a++) {
-	   	  		   
-	   	  		if(myUnits.get(a).unitType().equals(UnitType.Factory)) {
-	   	  			   if(myUnits.get(a).structureIsBuilt()==0) {
-	   	  				   unbuiltFactories.add(myUnits.get(a));
-	   	  			   }
-	   	  		}
-	   	  	   
-	   	  			   
 	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Worker)) {
-	   	  			   
-	   	  		   if (unbuiltFactories.isEmpty() != true) {
-	   	  			   goToFactory(gc, unbuiltFactories.get(0).location().mapLocation(), rotationTries, myUnits.get(a), directions, unbuiltFactories);
-	   	  			   System.out.println(unbuiltFactories.toString());
-	   	  		   }
-	   	  			 
-	   	  		   else {
-	   	  			      
-	   	  			      checkForKarbonite(gc,myUnits.get(a),directions);
-	   	  		   
-	   	  				   MapLocation possibleLocation=finalKarboniteDestination(gc,myUnits.get(a),karboniteLocationsEarth);
-	   	  				   MapLocation stupidLocation=new MapLocation(Planet.Earth,0,0);
-	   	  				   if(possibleLocation.equals(stupidLocation)) {
-		   	  				   randomPathFind(gc,directions,gc.myUnits().get(a));
-	   	  				   } else {
-	   	  				   pathFind(gc,possibleLocation,rotationTries,myUnits.get(a),directions);
-	   	  				   }
-	   	  			   //replicate(gc,myUnits.get(a),directions);
-	   	  			  // blueprintTheFactory(gc,directions,myUnits.get(a));
-	   	  		   
 	   	  			   workers.add(myUnits.get(a));
-	   	  		   }   
+
+
+	   	  			  // blueprintTheFactory(gc,directions,myUnits.get(a));
+	   	  			   
 	   	  		   }
 	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Knight)) {
 	   	  			   
@@ -140,98 +124,110 @@ public class Player {
 	   	  		   }
 	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Healer)) {
 	   	  			   
-	      
+	   	  		   }
+	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Factory)) {
+	   	  			   if(myUnits.get(a).structureIsBuilt()==0) {
+	   	  				   unbuiltFactories.add(myUnits.get(a));
+	   	  				   //buildTheFactory(gc,myUnits.get(a),workers);
+	   	  			   } else {
+	   	  				builtFactories.add(myUnits.get(a));
+	   	  			          }
+	   	  			   
 	   	  		   }
 	   	  		   if(myUnits.get(a).unitType().equals(UnitType.Rocket)) {
 	   	  			   
+	   	  			if(myUnits.get(a).structureIsBuilt()==0) {
+	   	  				   unbuiltRockets.add(myUnits.get(a));
+	   	  				   //buildTheFactory(gc,myUnits.get(a),workers);
+	   	  			   } else {
+	   	  				builtRockets.add(myUnits.get(a));
+	   	  			   }
+	   	  			   
 	   	  		   }
-	   	  		   
-	   	  		   if (unbuiltFactories.isEmpty() == true && gc.karbonite() >= 100)
-	   	  			   for (int i = 0; i < workers.size(); i++)
-	   	  				   if (blueprintTheFactory(gc, directions, workers.get(i)) == 1)
-	   	  					   i = workers.size();
+	   	  	   }
+	   	  	   if(builtFactories.size()>=4) {
+	   	  		   factoryCounter=4;
+	   	  	   }
+	   	  	   if(workers.size()>=4) {
+	   	  		   workerCounter=4;
+	   	  	   }
+	   	  	   if(gc.round()<5 ) {
+	   	  	   if(workers.size()<4&&workers.size()>0) {
+   	  			   int possiblyRandom=(int)(Math.random()*workers.size());
+	   	  			replicate(gc,workers.get(possiblyRandom),directions); 
+	   	  		   }
+	   	  	   }
+	   	  	   if(factoryCounter<4&&workers.size()>0) {
+	   	  		   if(unbuiltFactories.size()==0) {
+	   	  			   int possiblyRandom=(int)(Math.random()*workers.size());
+	   	  			   blueprintTheFactory(gc,directions,workers.get(possiblyRandom));
+	   	  		   }
+	   	  	   }  
+	   	  	   if(factoryCounter<4&&unbuiltFactories.size()>0) {
+	   	  		   for(int a=0;a<workers.size();a++) {
+	   	  			   int factoryBuilt=buildTheFactory(gc,unbuiltFactories.get(0),workers.get(a));
+	   	  			   if(factoryBuilt==0) {
+	   	  				   pathFind(gc,unbuiltFactories.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);
+	   	  			   }
+	   	  		   }
+	   	  	   } else if(factoryCounter>=4 && gc.round() < 225 || gc.round() > 300) {
+	   	  		   for(int a=0;a<workers.size();a++) {
+	  				   checkForKarbonite(gc,workers.get(a),directions);
+	  				 MapLocation possibleLocation=finalKarboniteDestination(gc,myUnits.get(a),karboniteLocationsEarth);
+	  				   MapLocation stupidLocation=new MapLocation(Planet.Earth,21,21);
+	  				   if(possibleLocation.equals(stupidLocation)) {
+   	  				   randomPathFind(gc,directions,workers.get(a));
+	  				   } else {
+	  				   pathFind(gc,possibleLocation,rotationTries,workers.get(a),directions);
+	  				   }
+	   	  		   }
 	   	  	   }
 	   	  	   
-	   	 
+	   	  	   if (gc.round() == 225) {
+	   	  		  int fun = blueprintTheRocket(gc, directions, workers);
+	        }
 	   	  	   
+	   	  	   
+	   	  	   if (gc.round() > 225 && gc.round() < 275) {
+	   	  		   
+	   	  		for(int a=0;a<workers.size();a++) {
+	   	  			if (unbuiltRockets.size() > 0) {
+	   	  			   int rocketBuilt = buildTheRocket(gc,unbuiltRockets.get(0),workers.get(a));
+	   	  			   if(rocketBuilt==0) {
+	   	  				   pathFind(gc,unbuiltRockets.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);
+	   	  			   }
+	   	  		   }
+	   	  		}
+	   	  	   }
+	   	  	   
+	   	  	   if (builtRockets.isEmpty() == false) {
+	   	  		   int counter = 0;
+	   	  		   while (counter < 9) {
+	   	  		   for (int i = 0; i < builtRockets.size(); i++) {
+	   	  			   for (int a = 0; a < workers.size(); a++) {
+	   	  				   loadRocketWithWorkers(gc, builtRockets.get(i), workers.get(a), rotationTries, directions);
+	   	  				   counter++;
+	   	  			   }
+	   	  		   }
+	   	  	   }
+	   	  	   }
+	   	  	   
+	   	  	   if (gc.round() == 275) {
+	   	  		   if (gc.canLaunchRocket(builtRockets.get(0).id(), new MapLocation(Planet.Mars, 5, 5)))
+	   	  			   gc.launchRocket(builtRockets.get(0).isFactoryProducing(), new MapLocation(Planet.Mars, 5, 5));
+	   	  	   }
 
-	           /*
-	           VecUnit current = gc.myUnits();
-	           myTeam=gc.team();
-	           for(int a=0;a<current.size();a++) {
-	        	   	if(current.get(a).unitType().equals(UnitType.Factory)) {
-	        	   		if(current.get(a).structureIsBuilt()==0) {
-	        	   			System.out.println(unbuiltFactories.contains(current.get(a)));
-	        	   			if(!unbuiltFactories.contains(current.get(a))) {
-		        	   			unbuiltFactories.add(current.get(a));
-	        	   			}
-	        	   		} else {
-	        	   			
-	        	   			builtFactories.add(current.get(a));
-	        	   		}
-	     
-	        	   	}
-	        	   	if(current.get(a).unitType().equals(UnitType.Rocket)) {
-	        	   		if(current.get(a).structureIsBuilt()==0) {
-	        	   			unbuiltRockets.add(current.get(a));
-	        	   		} else {
-	        	   			builtRockets.add(current.get(a));
-	        	   		}
-	     
-	        	   	}
-	        	   	if(current.get(a).unitType().equals(UnitType.Worker)) {
-	        	   		workers.add(current.get(a));
-	        	   	}
-	        	   	if(current.get(a).unitType().equals(UnitType.Knight)) {
-	        	   		knights.add(current.get(a));
-	        	   	}
-	        	   	if(current.get(a).unitType().equals(UnitType.Healer)) {
-	        	   		healers.add(current.get(a));
-	        	   	}
-	        	   	if(current.get(a).unitType().equals(UnitType.Mage)) {
-	        	   		mages.add(current.get(a));
-	        	   	}
-	        	   	if(current.get(a).unitType().equals(UnitType.Ranger)) {
-	        	   		rangers.add(current.get(a));
-	        	   	}
 
-	           }
-	           structures.addAll(builtRockets);
-	           structures.addAll(unbuiltRockets);
-	           structures.addAll(builtFactories);
-	           structures.addAll(unbuiltFactories);
-	           System.out.println("Big test"+Arrays.toString(unbuiltFactories.toArray()));
-
-	           long factoryRound=gc.round()%50;
-	           long karbonite=gc.karbonite();
-	           if(factoryRound==1&&karbonite>=100) {
-	        	   blueprintTheFactory(gc,directions,workers,unbuiltFactories);
-	           }
-	           buildTheFactory(gc,unbuiltFactories,workers);
-	           karbonite=gc.karbonite();
-	           long roundNumber=gc.round()%2;
-	           if(karbonite>20&&roundNumber==1) {
-	        	   	buildKnights(gc,builtFactories);	        	   
-	           }
-
-	           unloadGarrison(gc,builtFactories,directions);
-	        	checkForKarbonite(gc, workers,directions);
-
-	   	  	if(gc.planet().equals(Planet.Earth)) {
-	   		  	karboniteLocationsEarth=setKarboniteDestination(gc,karboniteLocationsEarth,planetMap);
-	   		  	//for(int workerTracker=0;workerTracker<workers.size();workerTracker++) {
-	   		  		MapLocation placeToGo=finalKarboniteDestination(gc,workers.get(0),karboniteLocationsEarth);
-	   		  		pathFind(gc,placeToGo,rotationTries,workers.get(0));
-	   		  	//}
-	   		}
-	       // 	checkToReplicate(gc, workers);*/
 	        	gc.nextTurn();
-	           
+
+	   	  	   }
+	        
+
+	 }
 
 	           
-	        }
-	        }
-  
+	//// End of the main method        
+	//// Start of static methods      
 	
 	        
 	      // Checks for karbonite and mines karbonite if available
@@ -246,47 +242,6 @@ public class Player {
 	    			  }
 	    	  }
 	    		  
-	    		/*  if (current.workerHasActed() == 0) {
-	    			  
-	    			  if (gc.canHarvest(current.id(), Direction.North))
-	    				  gc.harvest(current.id(), Direction.North);
-	    			  else if (gc.canHarvest(current.id(), Direction.Northeast))
-	    				  gc.harvest(current.id(), Direction.Northeast);
-	    			  else if (gc.canHarvest(current.id(), Direction.Northwest))
-	    				  gc.harvest(current.id(), Direction.Northwest);
-	    			  else if (gc.canHarvest(current.id(), Direction.East))
-	    				  gc.harvest(current.id(), Direction.East);
-	    			  else if (gc.canHarvest(current.id(), Direction.Southeast))
-	    				  gc.harvest(current.id(), Direction.Southeast);
-	    			  else if (gc.canHarvest(current.id(), Direction.Southwest))
-	    				  gc.harvest(current.id(), Direction.Southwest);
-	    			  else if (gc.canHarvest(current.id(), Direction.West))
-	    				  gc.harvest(current.id(), Direction.West);
-	    			  else if (gc.canHarvest(current.id(), Direction.South))
-	    				  gc.harvest(current.id(), Direction.South);
-	    			  else {
-
-	    				  if (gc.canMove(current.id(), Direction.North) && current.movementHeat() < 10) {
-	    					  System.out.println("Movement heat:"+current.movementHeat());
-		    				  gc.moveRobot(current.id(), Direction.North);
-	    				  }
-		    			  else if (gc.canMove(current.id(), Direction.Northeast) && current.movementHeat() < 10)
-		    				  gc.moveRobot(current.id(), Direction.Northeast);
-		    			  else if (gc.canMove(current.id(), Direction.Northwest) && current.movementHeat() < 10)
-		    				  gc.moveRobot(current.id(), Direction.Northwest);
-		    			  else if (gc.canMove(current.id(), Direction.East) && current.movementHeat() < 10)
-		    				  gc.moveRobot(current.id(), Direction.East);
-		    			  else if (gc.canMove(current.id(), Direction.Southeast) && current.movementHeat() < 10)
-		    				  gc.moveRobot(current.id(), Direction.Southeast);
-		    			  else if (gc.canMove(current.id(), Direction.Southwest) && current.movementHeat() < 10)
-		    				  gc.moveRobot(current.id(), Direction.Southwest);
-		    			  else if (gc.canMove(current.id(), Direction.West) && current.movementHeat() < 10)
-		    				  gc.moveRobot(current.id(), Direction.West);
-		    			  else if (gc.canMove(current.id(), Direction.South) && current.movementHeat() < 10)
-		    				  gc.moveRobot(current.id(), Direction.South);
-	    				  }
-	    			  }
-	    		  }*/
 
 	      public static long getFirstLaunchRound(GameController gc) {
 	    	  //currentPattern is the orbit pattern of the map
@@ -341,12 +296,12 @@ public class Player {
  	        directions.add(Direction.Northwest);
  	        return directions;
  	 }
-     	 public static void buildTheFactory(GameController gc,Unit unbuiltFactory,ArrayList<Unit> workers) {
-     		 for(int a=0;a<workers.size();a++) {
-     				 if(gc.canBuild(workers.get(a).id(), unbuiltFactory.id())) {
-     					 gc.build(workers.get(a).id(), unbuiltFactory.id());
+     	 public static int buildTheFactory(GameController gc,Unit unbuiltFactory,Unit worker) {
+     				 if(gc.canBuild(worker.id(), unbuiltFactory.id())) {
+     					 gc.build(worker.id(), unbuiltFactory.id());
+     					 return 1;
      				 }
-     		 } 
+     				 return 0;
      	 }
 
      	 public static void unloadGarrison(GameController gc,ArrayList<Unit> builtFactories,ArrayList<Direction> directions) {
@@ -380,7 +335,7 @@ public class Player {
      	 }
      	 public static MapLocation finalKarboniteDestination(GameController gc, Unit worker,ArrayList<MapLocation> karboniteLocationsEarth) {
      		 long min=1000;
-     		 MapLocation optimalMapLocation=new MapLocation(Planet.Earth,0,0);
+     		 MapLocation optimalMapLocation=new MapLocation(Planet.Earth,21,21);
      		 for(int a=0;a<karboniteLocationsEarth.size();a++) {
      			 try {
      			 if(gc.karboniteAt(karboniteLocationsEarth.get(a))>0) {
@@ -388,19 +343,16 @@ public class Player {
      			 if(distance<min) {
      				 min=distance;
      				 optimalMapLocation=karboniteLocationsEarth.get(a);
-     				 //System.out.println("Got the minimum "+min);
-     				// System.out.println("Karbonite maplocation: "+optimalMapLocation);
+
      			 }
      			 }
      			 } catch (Exception e) {
      				 
      			 }
      		 }
-     		 //System.out.println("MapLocation: "+optimalMapLocation);
-     		// System.out.println("Worker location: "+worker.location().mapLocation());
+
      		 return optimalMapLocation;
-     		 //gc.canMove(robot_id, direction)
-     		// gc.isMoveReady(robot_id)
+
      	 }
      	 public static int pathFind(GameController gc,MapLocation finalMapLocation,int[] rotationTries,Unit unit,ArrayList<Direction> directions) {
      		 try {
@@ -438,28 +390,41 @@ public class Player {
      		 return 0;
      	 }
      	 
-     	 public static int goToFactory(GameController gc, MapLocation finalLocation, int[] rotationTries, Unit unit, ArrayList<Direction> directions, ArrayList<Unit> unbuiltFactories) {
-     		 
-     		if (gc.canBuild(unit.id(), unbuiltFactories.get(0).id())) {
-     			gc.build(unit.id(), unbuiltFactories.get(0).id());
-     			return 1;
+     	public static int blueprintTheRocket(GameController gc, ArrayList<Direction> directions,ArrayList<Unit> workers) {
+      	  //System.out.println("Number of workers: "+workers.size());
+     		for(int a=0;a<workers.size();a++) {
+        		  for(int b=0;b<directions.size();b++) {
+        			  if(gc.canBlueprint(workers.get(a).id(), UnitType.Rocket, directions.get(b))) {
+        				  gc.blueprint(workers.get(a).id(), UnitType.Rocket, directions.get(b));
+        				  return 1;
+        			  }
+        		  }
+        	  }
+        	  
+        	  return 0;
+        	  
+          }
+      	  
+     	
+     	public static int buildTheRocket(GameController gc,Unit unbuiltRockets,Unit worker) {
+			 if(gc.canBuild(worker.id(), unbuiltRockets.id())) {
+				 gc.build(worker.id(), unbuiltRockets.id());
+				 return 1;
+			 }
+		
+		return 0;
+ }
+     	
+     	public static void loadRocketWithWorkers (GameController gc, Unit rockets, Unit worker, int[] rotationTries, ArrayList<Direction> directions) {
+     	  
+     		if (gc.canLoad(rockets.id(), worker.id())) {
+     			gc.load(rockets.id(), worker.id());
      		}
      		else {
-     			pathFind(gc, finalLocation, rotationTries, unit, directions);
+     			pathFind(gc, rockets.location().mapLocation(), rotationTries, worker, directions);
      		}
-     		 
-     		 
-     		 return 0;
-     	 }
-     	 /*
-     	  * public static void pathFind(gc,finalMapLocation,rotationTries,Unit unit) {
-     	  * 		Direction goTo=mapLocation.directionTo();
-     	  * 		if(gc.isMoveReady(unit.id)==true)
-     	  * 		for(int a=0;a<rotationTries.length;a++) {
-     	  * 			if(gc.canMove(unit.id,goTo)) {
-     	  * 				gc.Move(unit.id,goTto);
-     	  * 
-     	  * }
-     	  */
+     		
+        }
+
 
 }
