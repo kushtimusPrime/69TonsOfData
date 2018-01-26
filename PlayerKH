@@ -51,21 +51,38 @@ public class Player {
     	    int canBlueprintFactory=1;
     	    int factoryCounter=4;
     	    int builtFactoryCount=0;
+    	    int builtRocketCount=0;
+    	    int canBlueprintRocket=1;
     	    ArrayList<Unit> workers=new ArrayList<Unit>();
         MapLocation stupidLocation=new MapLocation(Planet.Earth,-1,-1);
+        ArrayList<Unit> unbuiltRockets=new ArrayList<Unit>();
+	    ArrayList<Unit> builtRockets=new ArrayList<Unit>();
     		while (true) {
     			workers.clear();
     			unbuiltFactories.clear();
     			builtFactories.clear();
+    			unbuiltRockets.clear();
+    			builtRockets.clear();
     			System.out.println("Current round:"+gc.round());
     			System.out.println("Karbonite:"+gc.karbonite());
+    			try {
+    			System.out.println("Get time left "+gc.getTimeLeftMs()+"ms");
+    			} catch (Exception e) {
+    				
+    			}
     			VecUnit myUnits=gc.myUnits();
-    			VecUnit enemyUnits=gc.senseNearbyUnitsByTeam(new MapLocation(Planet.Earth,(int)planetMap.getWidth()/2,(int)planetMap.getHeight()/2), 10*((planetMap.getHeight()/2)*(planetMap.getHeight()/2)), enemyTeam);
+    			VecUnit enemyUnits=gc.senseNearbyUnitsByTeam(new MapLocation(Planet.Earth,(int)planetMap.getWidth()/2,(int)planetMap.getHeight()/2), ((planetMap.getHeight())*(planetMap.getWidth())), enemyTeam);
     			for(int d=0;d<myUnits.size();d++) {
     			    if(myUnits.get(d).unitType().equals(UnitType.Worker)) {
     			    		workers.add(myUnits.get(d));
     			    		if(gc.round()<3) {
     			    			replicate(gc,myUnits.get(d),directions);
+    			    		}
+    			    		if(canBlueprintRocket>0&&builtRocketCount<2&&gc.round()>200) {
+    			    			if(blueprintTheRocket(gc,directions,myUnits.get(d))==1) {
+    			    				canBlueprintRocket=0;
+    			    			}
+    			    				
     			    		}
     			    		if(canBlueprintFactory>0&&builtFactoryCount<4) {
     			    			if(blueprintTheFactory(gc,directions,myUnits.get(d))==1) {
@@ -131,7 +148,9 @@ public class Player {
     			    			unbuiltFactories.add(myUnits.get(d));
     			    		} else {
     			    			builtFactories.add(myUnits.get(d));
+    			    			//if(gc.round()<200||builtRocketCount>=2) {
     			    		    buildRangers(gc,myUnits.get(d));
+    			    			//}
     			    		    unloadGarrison(gc,myUnits.get(d),directions);
     			    		}
     			    }
@@ -142,6 +161,14 @@ public class Player {
     			    				pathFind(gc,maybe,rotationTries,myUnits.get(d),directions);
     			    			}
     			    		}
+    			    }
+    			    if(myUnits.get(d).unitType().equals(UnitType.Rocket)) {
+    			    		if(myUnits.get(d).structureIsBuilt()==0) {
+    			    			unbuiltRockets.add(myUnits.get(d));
+    			    		} else {
+    			    			builtRockets.add(myUnits.get(d));
+    			    		}
+    			    	
     			    }
     			    
     			}
@@ -180,15 +207,22 @@ public class Player {
 */
 	    		if(unbuiltFactories.size()>0) {
 	    			for(int a=0;a<workers.size();a++) {
-	    			if(buildTheFactory(gc,unbuiltFactories.get(0),workers.get(a))==0) {
-	    				pathFind(gc,unbuiltFactories.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);    				
+	    				if(buildTheFactory(gc,unbuiltFactories.get(0),workers.get(a))==0) {
+	    					pathFind(gc,unbuiltFactories.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);    				
 	    				//MapLocation finalMapLocation,int[] rotationTries,Unit unit,ArrayList<Direction> directions) {
-	    			}
+	    				}
 	    			}
 	    		}
 	    		if(builtFactories.size()>builtFactoryCount) {
 	    			builtFactoryCount=builtFactories.size();
 	    			canBlueprintFactory=1;
+	    		}
+	    		if(unbuiltRockets.size()>0) {
+	    			for(int a=0;a<workers.size();a++) {
+	    				if(buildTheRocket(gc,unbuiltRockets.get(0),workers.get(a))==0) {
+	    					pathFind(gc,unbuiltRockets.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);
+	    				}
+	    			}
 	    		}
     			gc.nextTurn();
     			/*
@@ -347,4 +381,27 @@ public class Player {
 		}
 		return optimalMapLocation;
     }
+ 	public static int blueprintTheRocket(GameController gc, ArrayList<Direction> directions,Unit worker) {
+    	  //System.out.println("Number of workers: "+workers.size());
+      		  for(int b=0;b<directions.size();b++) {
+      			  if(gc.canBlueprint(worker.id(), UnitType.Rocket, directions.get(b))) {
+      				  gc.blueprint(worker.id(), UnitType.Rocket, directions.get(b));
+      				  return 1;
+      			  }
+      		  }
+  			  if(gc.canBlueprint(worker.id(), UnitType.Rocket, Direction.Center)) {
+  				  gc.blueprint(worker.id(), UnitType.Rocket, Direction.Center);
+  				  return 1;
+  			  }
+  	      	  return 0;
+      	  }
+ 	public static int buildTheRocket(GameController gc,Unit unbuiltRocket,Unit worker) {
+		 if(gc.canBuild(worker.id(), unbuiltRocket.id())) {
+			 gc.build(worker.id(), unbuiltRocket.id());
+			 return 1;
+		 }
+	
+		 return 0;
+ 	}
+      	        	  
 }
