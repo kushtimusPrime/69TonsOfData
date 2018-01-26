@@ -45,7 +45,7 @@ public class Player {
     	    } else {
     	    enemyTeam=Team.Blue;
     	    }
-    	    int[] rotationTries= {0,-1,1,-2,2};
+    	    int[] rotationTries= {0,-1,1,-2,2,-3,3};
     	    ArrayList<Unit> unbuiltFactories=new ArrayList<Unit>();
     	    ArrayList<Unit> builtFactories=new ArrayList<Unit>();
     	    int canBlueprintFactory=1;
@@ -54,17 +54,19 @@ public class Player {
     	    int builtRocketCount=0;
     	    int canBlueprintRocket=1;
     	    int rocketCount = 0;
-    	    
-    	ArrayList<Unit> workers=new ArrayList<Unit>();
+    	    ArrayList<Unit> workers=new ArrayList<Unit>();
         MapLocation stupidLocation=new MapLocation(Planet.Earth,-1,-1);
         ArrayList<Unit> unbuiltRockets=new ArrayList<Unit>();
 	    ArrayList<Unit> builtRockets=new ArrayList<Unit>();
+	    ArrayList<Unit> rangers=new ArrayList<Unit>();
+	    int rangerCount=0;
     		while (true) {
     			workers.clear();
     			unbuiltFactories.clear();
     			builtFactories.clear();
     			unbuiltRockets.clear();
     			builtRockets.clear();
+    			rangers.clear();
     			System.out.println("Current round:"+gc.round());
     			System.out.println("Karbonite:"+gc.karbonite());
     			try {
@@ -75,38 +77,36 @@ public class Player {
     			VecUnit myUnits=gc.myUnits();
     			VecUnit enemyUnits=gc.senseNearbyUnitsByTeam(new MapLocation(Planet.Earth,(int)planetMap.getWidth()/2,(int)planetMap.getHeight()/2), ((planetMap.getHeight())*(planetMap.getWidth())), enemyTeam);
     			for(int d=0;d<myUnits.size();d++) {
-    				if(myUnits.get(d).unitType().equals(UnitType.Rocket)) {
-			    		if(myUnits.get(d).structureIsBuilt()==0) {
-			    			unbuiltRockets.add(myUnits.get(d));
-			    		} else {
-			    			builtRockets.add(myUnits.get(d));
-			    		}
-			    	
-			    }
-    				
     			    if(myUnits.get(d).unitType().equals(UnitType.Worker)) {
     			    		workers.add(myUnits.get(d));
-    			    		if(gc.round()< 8) {
+    			    		if(2<gc.round()&&gc.round()<5) {
     			    			replicate(gc,myUnits.get(d),directions);
     			    		}
-    			    		if (rocketCount < 2) {
-    			    			if (blueprintTheRocket(gc, directions, myUnits.get(d)) == 1)
+    			    		if (rocketCount < 3) {
+    			    			int didBuild = blueprintTheRocket(gc, directions, myUnits.get(d));
+    			    			if (didBuild == 1)
     			    				rocketCount++;
+    			    		}
     			    				
     			    		}
     			    		if(canBlueprintFactory>0&&builtFactoryCount<4) {
     			    			if(blueprintTheFactory(gc,directions,myUnits.get(d))==1) {
     			    				canBlueprintFactory=0;
     			    			}
-    			    		}
-    			    		if(builtFactoryCount>=4 && unbuiltRockets.isEmpty()) {
-    			    			System.out.println("Goes through");
+    			    		} /*else if(unbuiltRockets.size()==0&&unbuiltFactories.size()==0) {
+    			    			checkForKarbonite(gc,myUnits.get(d),directions);
+    			    			MapLocation possibleLocation=finalKarboniteDestination(gc,myUnits.get(d),karboniteLocationsEarth);
+    			    			if(!possibleLocation.equals(stupidLocation)) {
+    			    				pathFind(gc,possibleLocation,rotationTries,myUnits.get(d),directions);
+    			    			}*/
+    			    		
+    			    		/*if(builtFactoryCount>=5) {
     			    			checkForKarbonite(gc,myUnits.get(d),directions);
     			    			MapLocation possibleLocation=finalKarboniteDestination(gc,myUnits.get(d),karboniteLocationsEarth);
     			    			if(!possibleLocation.equals(stupidLocation)) {
     			    				pathFind(gc,possibleLocation,rotationTries,myUnits.get(d),directions);
     			    			}
-    			    		}
+    			    		}*/
     			    		/*
     			    		 * Blueprint factory once factory is built
     			    		 */
@@ -153,14 +153,22 @@ public class Player {
     		     }
     			    			 */
 
-    			    }
+    			    
     			    if(myUnits.get(d).unitType().equals(UnitType.Factory)) {
     			    		if(myUnits.get(d).structureIsBuilt()==0) {
     			    			unbuiltFactories.add(myUnits.get(d));
     			    		} else {
     			    			builtFactories.add(myUnits.get(d));
+    			    			/*if(rangerCount%6==5) {
+    			    				if(buildHealers(gc,myUnits.get(d))==1) {
+    			    					rangerCount++;
+    			    				}
+    			    			}*/
     			    			//if(gc.round()<200||builtRocketCount>=2) {
-    			    		    buildRangers(gc,myUnits.get(d));
+    			    			if(buildRangers(gc,myUnits.get(d))==1) {
+    			    				rangerCount++;
+    			    				rangers.add(myUnits.get(d));
+    			    			}
     			    			//}
     			    		    unloadGarrison(gc,myUnits.get(d),directions);
     			    		}
@@ -170,16 +178,61 @@ public class Player {
     			    			MapLocation maybe=finalEnemyDestination(gc,myUnits.get(d),enemyUnits);
     			    			if(!maybe.equals(stupidLocation)) {
     			    				pathFind(gc,maybe,rotationTries,myUnits.get(d),directions);
+    			    			} else {
+    			    				MapLocation center=new MapLocation(Planet.Earth,(int)planetMap.getWidth()/2,(int)planetMap.getHeight()/2);
+    			    				pathFind(gc,center,rotationTries,myUnits.get(d),directions);
     			    			}
     			    		}
     			    }
+    			    if(myUnits.get(d).unitType().equals(UnitType.Healer)) {
+    			    		if(myUnits.get(d).location().isInGarrison()==false&&myUnits.get(d).location().isInSpace()==false) {
+    			    			
+    			    		}
+    			    }
+    			    if(myUnits.get(d).unitType().equals(UnitType.Rocket)) {
+    			    		if(myUnits.get(d).structureIsBuilt()==0) {
+    			    			unbuiltRockets.add(myUnits.get(d));
+    			    		} else {
+    			    			builtRockets.add(myUnits.get(d));
+    			    		}
+    			    	
+    			    }
     			    
     			}
-
+    			/*if(gc.round()<100) {
+    		     if(workers.size()>=4) {
+    		         workerCounter=4;
+    		         }
+    		         if(gc.round()<5 ) {
+    		         if(workers.size()<4&&workers.size()>0) {
+    		         int possiblyRandom=(int)(Math.random()*workers.size());
+    		         replicate(gc,workers.get(possiblyRandom),directions);
+    		         }
+    		         }
+    			if(builtFactories.size()>=4) {
+    			     factoryCounter=4;
+    			}
+    		     if(factoryCounter<4&&workers.size()>0) {
+    		         if(unbuiltFactories.size()==0) {
+    		         int possiblyRandom=(int)(Math.random()*workers.size());
+    		         blueprintTheFactory(gc,directions,workers.get(possiblyRandom));
+    		         }
+    		    }
+    		     if(factoryCounter<4&&unbuiltFactories.size()>0) {
+    		         for(int a=0;a<workers.size();a++) {
+    		        	 	int factoryBuilt=buildTheFactory(gc,unbuiltFactories.get(0),workers.get(a));
+    		        	 	if(factoryBuilt==0) {
+    		        	 		int found=pathFind(gc,unbuiltFactories.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);
+    		        	 		if(found==0) {
+    		        	 			randomPathFind(gc,directions,workers.get(a));
+    		        	 		}
+    		        	 	}
+    		         }
+    		    }
+    			}
     			
-    		//	System.out.println(unbuiltRockets.size());
-	    		
-    			if(unbuiltFactories.size()>0) {
+*/
+	    		if(unbuiltFactories.size()>0) {
 	    			for(int a=0;a<workers.size();a++) {
 	    				if(buildTheFactory(gc,unbuiltFactories.get(0),workers.get(a))==0) {
 	    					pathFind(gc,unbuiltFactories.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);    				
@@ -187,52 +240,75 @@ public class Player {
 	    				}
 	    			}
 	    		}
-	    		if(builtFactories.size()>builtFactoryCount) {
+	    	/*	if(builtFactories.size()>builtFactoryCount) {
 	    			builtFactoryCount=builtFactories.size();
 	    			canBlueprintFactory=1;
-	    		}
-	    		if(unbuiltRockets.size()>0) {
+	    		} */
 	    			for(int a=0;a<workers.size();a++) {
-	    				if(buildTheRocket(gc,unbuiltRockets.get(0),workers.get(a))==0) {
-	    					pathFind(gc,unbuiltRockets.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);
+	    				if(unbuiltFactories.size()>0) {
+		    				if(buildTheFactory(gc,unbuiltFactories.get(0),workers.get(a))==0) {
+		    					pathFind(gc,unbuiltFactories.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);    				
+		    				//MapLocation finalMapLocation,int[] rotationTries,Unit unit,ArrayList<Direction> directions) {
+		    				}
+	    				} else if(unbuiltRockets.size()>0 ) {
+	    					if(buildTheRocket(gc,unbuiltRockets.get(0),workers.get(a))==0) {
+	    						pathFind(gc,unbuiltRockets.get(0).location().mapLocation(),rotationTries,workers.get(a),directions);
+	    					} 
+	    				} else {
+	    	    			checkForKarbonite(gc,workers.get(a),directions);
+	    	    			MapLocation possibleLocation=finalKarboniteDestination(gc,workers.get(a),karboniteLocationsEarth);
+	    	    			if(!possibleLocation.equals(stupidLocation)) {
+	    	    				pathFind(gc,possibleLocation,rotationTries,workers.get(a),directions);
+	    	    			}
 	    				}
 	    			}
-	    		}
-	    		if(builtRockets.size() > 0) {
-	    			for (int a = 0; a < builtRockets.size(); a++) {
-	    			MapLocation rocketLocation = builtRockets.get(a).location().mapLocation();
-	    			VecUnit nearbyUnits = gc.senseNearbyUnits(rocketLocation, 1000);
-	    			       if (nearbyUnits.size() == 0) 
-	    			    	   nearbyUnits = gc.senseNearbyUnits(rocketLocation, 10000);
-	    			       
-	    			  for (int i = 0; i < nearbyUnits.size(); i++) {
-	    				  if (gc.canLoad(builtRockets.get(a).id(), nearbyUnits.get(i).id())) {
-	    					  gc.load(builtRockets.get(a).id(), nearbyUnits.get(i).id());
-	    					  
-	    				  }
-	    				  else {
-	    					  pathFind(gc, rocketLocation, rotationTries, nearbyUnits.get(i), directions);
-	    				  }
-	    			  }
-	    			}
-	    			
-	    			if (gc.round() == 250) {
-	    				for (int i = 0; i < builtRockets.size(); i++) {
-	    				
-	    					MapLocation sendTo = canLaunch(gc, builtRockets.get(i));
-	    				
-	    					if (gc.canLaunchRocket(builtRockets.get(i).id(), sendTo)) {
-	    						gc.launchRocket(builtRockets.get(i).id(), sendTo);
-	    					}
-	    				}
-	    			}
-	    			
-	    		}
-    			gc.nextTurn();
 
+	    			if(builtRockets.size() > 0 && gc.planet() == Planet.Earth) {
+		    			for (int a = 0; a < builtRockets.size(); a++) {
+		    			MapLocation rocketLocation = builtRockets.get(a).location().mapLocation();
+		    			VecUnit nearbyUnits = gc.senseNearbyUnits(rocketLocation, 1000);
+		    			       if (nearbyUnits.size() == 0) 
+		    			    	   nearbyUnits = gc.senseNearbyUnits(rocketLocation, 10000);
+		    			       
+		    			  for (int i = 0; i < nearbyUnits.size(); i++) {
+		    				  if (gc.canLoad(builtRockets.get(a).id(), nearbyUnits.get(i).id())) {
+		    					  gc.load(builtRockets.get(a).id(), nearbyUnits.get(i).id());
+		    					  
+		    				  }
+		    				  else {
+		    					  pathFind(gc, rocketLocation, rotationTries, nearbyUnits.get(i), directions);
+		    				  }
+		    			  }
+		    			}
+	    			}
+		    			
+		    			if (gc.round() == 250) {
+		    				for (int i = 0; i < builtRockets.size(); i++) {
+		    				
+		    					MapLocation sendTo = canLaunch(gc, builtRockets.get(i));
+		    				
+		    					if (gc.canLaunchRocket(builtRockets.get(i).id(), sendTo)) {
+		    						gc.launchRocket(builtRockets.get(i).id(), sendTo);
+		    					}
+		    				}
+		    			}
+		    			
+		    	if (gc.round() > 300 && gc.planet().equals(Planet.Mars)) {
+		    		for (int i = 0; i < builtRockets.size(); i++)
+		    			unloadGarrison(gc, builtRockets.get(i), directions);
+		    	}
+		    			
+    			gc.nextTurn();
+    			/*
+    			 * if(builtFactories.size()>builtFactoryCount) {
+    			 * 	builtFactoryCount=builtFactories.size();
+    			 * 	canBlueprintFactory=1;
+    			 * }
+    			 */
     		}
     		
     }
+    		
     public static ArrayList<Direction> setDirectionsArrayList(GameController gc,ArrayList<Direction> directions) {
     directions.add(Direction.North);
     directions.add(Direction.Northeast);
@@ -402,8 +478,14 @@ public class Player {
 	
 		 return 0;
  	}
- 	
- 	public static MapLocation canLaunch(GameController gc, Unit rocket)
+    public static int buildHealers(GameController gc,Unit builtFactory) {
+		if(gc.canProduceRobot(builtFactory.id(), UnitType.Healer) ) {
+			gc.produceRobot(builtFactory.id(), UnitType.Healer);
+			return 1;
+		}
+		return 0;   
+}
+    public static MapLocation canLaunch(GameController gc, Unit rocket)
  	{
  	/*	GameMap b = new GameMap();
  		PlanetMap m = b.getMars_map();
@@ -427,5 +509,5 @@ public class Player {
  	}
       return null;	        	  
 }
- 	
+      	        	  
 }
