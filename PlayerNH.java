@@ -218,8 +218,11 @@ public class Player {
 	    			
 	    			if (gc.round() == 250) {
 	    				for (int i = 0; i < builtRockets.size(); i++) {
-	    					if (gc.canLaunchRocket(builtRockets.get(i).id(), rocketlandinglocationMars())) {
-	    						gc.launchRocket(builtRockets.get(i).id(), new MapLocation(Planet.Mars, i * 5, 0));
+	    				
+	    					MapLocation sendTo = canLaunch(gc, builtRockets.get(i));
+	    				
+	    					if (gc.canLaunchRocket(builtRockets.get(i).id(), sendTo)) {
+	    						gc.launchRocket(builtRockets.get(i).id(), sendTo);
 	    					}
 	    				}
 	    			}
@@ -400,22 +403,29 @@ public class Player {
 		 return 0;
  	}
  	
- 	public static MapLocation rocketlandinglocationMars()
+ 	public static MapLocation canLaunch(GameController gc, Unit rocket)
  	{
- 		GameMap b = new GameMap();
+ 	/*	GameMap b = new GameMap();
  		PlanetMap m = b.getMars_map();
  		long height = m.getHeight();
- 		long width = m.getWidth();
- 		MapLocation land = new MapLocation(null, 0, 0);
+ 		long width = m.getWidth(); */
+ 		MapLocation land = new MapLocation(Planet.Mars, 0, 0);
  		land.setPlanet(Planet.Mars);
- 		while(m.onMap(land) == false && m.isPassableTerrainAt(land) == 0)
+ 		int z = 0;
+ 		
+ 		while(z == 0) {
  		{
- 		int x = (int)(Math.random()*width);
- 		int y = (int)(Math.random()*height);
+ 		int x = (int)(Math.random()* 100);
+ 		int y = (int)(Math.random()* 100);
  		land.setX(x);
  		land.setY(y);
+ 		
+ 		if (gc.canLaunchRocket(rocket.id(), land))
+ 			return land;
  		}
- 		return land;
+ 		
  	}
-      	        	  
+      return null;	        	  
+}
+ 	
 }
